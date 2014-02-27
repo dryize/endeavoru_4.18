@@ -3,7 +3,7 @@
 export ARCH=arm
 export SUBARCH=arm
 
-export LOCALVERSION="-Origin02"
+export LOCALVERSION="-Origin04"
 
 export CROSS_COMPILE=/home/dryize/android/toolchains/optimized/arm-cortex_a9-linux-gnueabihf-linaro_4.7.4-2014.01/bin/arm-cortex_a9-linux-gnueabihf-
 
