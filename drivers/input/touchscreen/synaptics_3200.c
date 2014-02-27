@@ -163,16 +163,16 @@ extern int get_tamper_sf(void);
  *  S2W free swipe and stroke variables
  */
 // beyond this threshold the panel will not register to apps
-int s2w_register_threshold = 9;
+static unsigned int s2w_register_threshold = 9;
 // power will toggle at this distance from start point
-int s2w_min_distance = 325;
+static unsigned int s2w_min_distance = 325;
 // use either direction for on/off
-int s2w_allow_stroke = 1;
-int s2w_switch = 1;
-bool scr_suspended = false;
-bool exec_count = true;
-bool barrier = false;
-bool mode=true;
+static bool s2w_allow_stroke = true;
+static bool s2w_switch = true;
+static bool scr_suspended = false;
+static bool exec_count = true;
+static bool barrier = false;
+static bool mode=true;
 static struct input_dev * sweep2wake_pwrdev;
 static DEFINE_MUTEX(pwrkeyworklock);
 
@@ -1687,7 +1687,7 @@ static ssize_t synaptics_s2w_allow_stroke_dump(struct device *dev,
         return count;
     }
     if (value == 0 || value == 1) {
-	    s2w_allow_stroke = (int)value;
+	    s2w_allow_stroke = (bool)value;
 	    printk(S2W_TAG "s2w_allow_stroke=%d", s2w_allow_stroke);
     } else {
         printk(S2W_TAG "set s2w_allow_stroke failed - valid values are 0 or 1 - %s", buf);
@@ -1720,7 +1720,7 @@ static ssize_t synaptics_sweep2wake_dump(struct device *dev,
         return count;
     }
     if (value == 0 || value == 1) {
-        s2w_switch = (int)value;
+        s2w_switch = (bool)value;
     	printk(S2W_TAG "s2w_switch=%d", s2w_switch);
     } else {
         printk(S2W_TAG "set s2w_switch failed - valid values are 0 or 1 - %s", buf);
@@ -1940,7 +1940,7 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 	static int downx = -1;
 #endif
 
-    if(touchDebug==true)
+    if(touchDebug)
         printk(KERN_INFO "[TP] Finger event\n");
 
 	memset(buf, 0x0, sizeof(buf));
@@ -2043,8 +2043,8 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
 			/* if finger released, reset count & barriers */
-			if ((((ts->finger_count > 0)?1:0) == 0) && (s2w_switch > 0)) {
-				if(touchDebug==true)
+			if ((((ts->finger_count > 0)?1:0) == 0) && s2w_switch) {
+				if(touchDebug)
 					printk(KERN_INFO "[TP] [sweep2wake] Finger leave\n");
 
 				if (s2w_switch){
@@ -2180,10 +2180,10 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 						finger_pressed &= ~BIT(i);
 
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
-            if(s2w_allow_stroke == 1)
+            if(s2w_allow_stroke)
             {
               // stroke2wake - any direction activates
-              if((ts->finger_count == 1) && (s2w_switch > 0))
+              if((ts->finger_count == 1) && s2w_switch)
               {
                 if(((downx == -1) || (abs(downx - finger_data[i][0]) > s2w_register_threshold)) && (finger_data[i][1] > 1780))
                 {
@@ -2231,7 +2231,7 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
             {
               // Free swipe - single direction activation
               //left->right
-              if ((ts->finger_count == 1) && (scr_suspended == true) && (s2w_switch > 0)) {
+              if ((ts->finger_count == 1) && (scr_suspended == true) && s2w_switch) {
       
                 if(((downx == -1) || (finger_data[i][0] > downx)) && (finger_data[i][1] > 1780))
                 {
@@ -2263,7 +2263,7 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
                   }
                 }
               //right->left
-              } else if ((ts->finger_count == 1) && (scr_suspended == false) && (s2w_switch > 0)) {
+              } else if ((ts->finger_count == 1) && (scr_suspended == false) && s2w_switch) {
               
                 if(((downx == -1) || (finger_data[i][0] < downx)) && (finger_data[i][1] > 1780))
                 {
@@ -2298,12 +2298,12 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 						}
 
 						if(mode == false){
-							if(touchDebug==true)
+							if(touchDebug)
 								printk(S2W_TAG "suspended - ignoring other events");						
 							break;
 						} else {
 							if (barrier == true){
-								if(touchDebug==true)
+								if(touchDebug)
 									printk(S2W_TAG "in sweep - ignoring other events");
 								break;
 							}
@@ -3337,7 +3337,7 @@ static int synaptics_ts_suspend(struct i2c_client *client, pm_message_t mesg)
 	printk(KERN_INFO "[TP] %s: enter\n", __func__);
 
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
-	if (s2w_switch > 0) {
+	if (s2w_switch) {
 		//screen off, enable_irq_wake
 	    printk(KERN_INFO "[TP] enable_irq_wake\n");
 		enable_irq_wake(client->irq);
@@ -3346,7 +3346,7 @@ static int synaptics_ts_suspend(struct i2c_client *client, pm_message_t mesg)
 
 	if (ts->use_irq) {
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
-		if (s2w_switch == 0) {
+		if (!s2w_switch) {
 #endif		
 			disable_irq(client->irq);
 			ts->irq_enabled = 0;
@@ -3449,7 +3449,7 @@ static int synaptics_ts_suspend(struct i2c_client *client, pm_message_t mesg)
 
 
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
-	if (s2w_switch == 0) {
+	if (!s2w_switch) {
 #endif
 
 #ifdef SYN_SUSPEND_RESUME_POWEROFF
@@ -3483,7 +3483,7 @@ static int synaptics_ts_suspend(struct i2c_client *client, pm_message_t mesg)
 #endif
 
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
-	if (s2w_switch > 0) {
+	if (s2w_switch) {
 		scr_suspended = true;
 		mode=false;
 	}
@@ -3500,7 +3500,7 @@ static int synaptics_ts_resume(struct i2c_client *client)
 
 
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
-	if (s2w_switch > 0) {
+	if (s2w_switch) {
 		/* HW revision fix, this is not needed for all touch controllers!
 		 * suspend me for a short while, so that resume can wake me up the right way
 		 *
@@ -3520,7 +3520,7 @@ static int synaptics_ts_resume(struct i2c_client *client)
 #endif
 
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
-	if (s2w_switch == 0) {
+	if (!s2w_switch) {
 #endif
 
 #ifdef SYN_SUSPEND_RESUME_POWEROFF
@@ -3575,7 +3575,7 @@ static int synaptics_ts_resume(struct i2c_client *client)
 	}
 
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
-	if (s2w_switch == 0) {
+	if (!s2w_switch) {
 #endif
 
 	if (ts->use_irq) {
@@ -3590,7 +3590,7 @@ static int synaptics_ts_resume(struct i2c_client *client)
 #endif
 
 #ifdef CONFIG_CAPACITIVE_SWEEP2WAKE
-	if (s2w_switch > 0) {
+	if (s2w_switch) {
 		scr_suspended = false;
 		mode=true;
 	}

@@ -20,10 +20,10 @@ echo "Enter a name for the kernel :"
 read kname
 
 mkdir ../out/$kname
-cp ../out/dummy/* ../out//$knmae// -r
+cp ../out/dummy/* ../out/$kname/ -r
 
-cp arch/arm/boot/zImage ../out//$knmae//
-find . -name '*ko' -exec cp '{}' ../out//$knmae//system/lib/modules/ \;
+cp arch/arm/boot/zImage ../out/$kname/
+find . -name '*ko' -exec cp '{}' ../out/$kname/system/lib/modules/ \;
 
 
-#./../out/tools/mkbootimg --kernel ../out/s2w_o3/zImage --ramdisk ../out/tools/ramdisk.cpio.gz --ramdiskaddr 0x0050C4F0  -o ../out/s2w_o3/kernel/boot.img
+./../out/tools/mkbootimg --kernel ../out/$kname/zImage --ramdisk ../out/tools/ramdisk.cpio.gz --ramdiskaddr 0x0050C4F0  -o ../out/$kname/kernel/boot.img
