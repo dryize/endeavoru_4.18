@@ -566,6 +566,11 @@ config KEYBOARD_W90P910
 config CAPACITIVE_SWEEP2WAKE
 	tristate "Sweep2Wake for SYNAPTICS_3k based touchscreens"
 	depends on TOUCHSCREEN_SYNAPTICS_3k
+	default y
+
+config CAPACITIVE_DT2W
+	tristate "DoubleTap2wake for SYNAPTICS_3k based touchscreens"
+	depends on CAPACITIVE_SWEEP2WAKE
 	default n
 
 endif
